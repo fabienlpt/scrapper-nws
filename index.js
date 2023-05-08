@@ -49,8 +49,8 @@ app.get("/recettes/ingredients/:ingredients", async (req, res) => {
     WHERE ingredients.nom = ?`,
     [req.params.ingredients]
   );
-
-  res.json(recipe[0]);
+  
+  res.json(recipe);
 });
 
 app.listen(3000, () => {
