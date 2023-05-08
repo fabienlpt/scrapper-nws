@@ -57,17 +57,17 @@ async function getElemsFromRecipe(url) {
 }
 
 async function insertJson (recipes, ingredients) {
-  fs.writeFile("recettes.json", JSON.stringify(recipes), (err) => {
+  fs.writeFile("json/recettes.json", JSON.stringify(recipes), (err) => {
     if (err) throw err;
     console.log("Le fichier JSON a été créé avec succès!");
   });
-  fs.writeFile("ingredients.json", JSON.stringify(ingredients), (err) => {
+  fs.writeFile("json/ingredients.json", JSON.stringify(ingredients), (err) => {
     if (err) throw err;
     console.log("Le fichier JSON a été créé avec succès!");
   });
 }
 
-async function scrapeRecipes(url, recipes) {
+async function scrapeRecipes(url) {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto(url);
@@ -76,6 +76,7 @@ async function scrapeRecipes(url, recipes) {
   const hrefs = await page.$$eval(".mntl-card-list-items", (links) =>
     links.map((link) => link.href)
   );
+  const recipes = [];
   const ingredients = [];
   for (const href of hrefs) {
     if( href.startsWith('https://www.allrecipes.com/recipe/')) {
@@ -83,7 +84,7 @@ async function scrapeRecipes(url, recipes) {
       const recipe = {
           titre:  recipeData.titre,
           image: recipeData.image,
-          ingrédients: recipeData.ingredients,
+          ingredients: recipeData.ingredients,
           instructions: recipeData.instructions,
       };
 
@@ -100,12 +101,4 @@ async function scrapeRecipes(url, recipes) {
   await browser.close();
 }
 
-
-async function readRecipes() {
-  const recipes = [];
-  const url = 'https://www.allrecipes.com/recipes/';
-  await scrapeRecipes(url, recipes);
-  console.log(recipes);
-}
-
-readRecipes();
+scrapeRecipes('https://www.allrecipes.com/recipes/');

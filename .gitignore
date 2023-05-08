@@ -1,4 +1,3 @@
 node_modules
-recettes.json
-ingredients.json
+json
 .env
