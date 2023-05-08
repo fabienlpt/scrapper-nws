@@ -1,104 +1,58 @@
-import { json } from 'express';
-import puppeteer from 'puppeteer';
-import fs from 'fs';
+import mysql from "mysql2/promise";
+import express from "express";
 
-// process.setMaxListeners(0);
+// create get / get by id / get by name / get by ingredients routes
 
-async function getElemsFromRecipe(url) {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto(url);
+const app = express();
 
-    const title = await page.$eval("h1", (el) => el.textContent.trim());
-    const image = await page.$eval(
-      ".img-placeholder img",
-      (img) => img.src
-    );
-    const instructions = await page.$$eval(".mntl-sc-block-group--LI", (steps) =>
-      steps.map((step) => {
-        const instruction = step.querySelector("p").textContent;
-        return instruction;
-      })
-        
-    );
+// create a connection to the database
+const dbConnection = await mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "restaurant",
+});
 
-    const ingredientsElems = await page.$$('.mntl-structured-ingredients__list-item');
-    const ingredients = [];
-    for (const elem of ingredientsElems) {
-        // ingredient name get span where variable data-ingredient-name="true"
-        const ingredientNameElem = await elem.$('span[data-ingredient-name="true"]');
-        const ingredientNameProp = await ingredientNameElem.getProperty('textContent');
-        const ingredientName = await ingredientNameProp.jsonValue();
-        // ingredient quantity get span where variable data-ingredient-quantity="true"
-        const ingredientQuantityElem = await elem.$('span[data-ingredient-quantity="true"]');
-        const ingredientQuantityProp = await ingredientQuantityElem.getProperty('textContent');
-        const ingredientQuantity = await ingredientQuantityProp.jsonValue();
-        // ingredient unit get span where variable data-ingredient-unit="true"
-        const ingredientUnitElem = await elem.$('span[data-ingredient-unit="true"]');
-        const ingredientUnitProp = await ingredientUnitElem.getProperty('textContent');
-        const ingredientUnit = await ingredientUnitProp.jsonValue();
+// get all recipes
+app.get("/recettes", async (req, res) => {
+  const [recipes] = await dbConnection.execute("SELECT * FROM recettes");
 
-        const ingredient = {
-            name: ingredientName,
-            quantity: ingredientQuantity,
-            unit: ingredientUnit,
-        };
-        ingredients.push(ingredient);
-    }
-    
-    await browser.close();
-    const data = {
-        titre : title,
-        image: image,
-        ingredients: ingredients,
-        instructions: instructions,
-    };
-    return data;
-}
+  res.json(recipes);
+});
 
-async function insertJson (recipes, ingredients) {
-  fs.writeFile("json/recettes.json", JSON.stringify(recipes), (err) => {
-    if (err) throw err;
-    console.log("Le fichier JSON a été créé avec succès!");
-  });
-  fs.writeFile("json/ingredients.json", JSON.stringify(ingredients), (err) => {
-    if (err) throw err;
-    console.log("Le fichier JSON a été créé avec succès!");
-  });
-}
-
-async function scrapeRecipes(url) {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.goto(url);
-
-  
-  const hrefs = await page.$$eval(".mntl-card-list-items", (links) =>
-    links.map((link) => link.href)
+// get recipe by id
+app.get("/recettes/:id", async (req, res) => {
+  const [recipe] = await dbConnection.execute(
+    "SELECT * FROM recettes WHERE id = ?",
+    [req.params.id]
   );
-  const recipes = [];
-  const ingredients = [];
-  for (const href of hrefs) {
-    if( href.startsWith('https://www.allrecipes.com/recipe/')) {
-      const recipeData = await getElemsFromRecipe(href);
-      const recipe = {
-          titre:  recipeData.titre,
-          image: recipeData.image,
-          ingredients: recipeData.ingredients,
-          instructions: recipeData.instructions,
-      };
 
-      for (const ingredient of recipeData.ingredients) {
-        if (!ingredients.includes(ingredient.name))
-          ingredients.push({ name: ingredient.name });
-      }
+  res.json(recipe[0]);
+});
 
-      recipes.push(recipe);
-      console.log(recipe);
-    }
-  }
-  insertJson(recipes, ingredients);
-  await browser.close();
-}
+// get recipe by name
+app.get("/recettes/nom/:nom", async (req, res) => {
+  const [recipe] = await dbConnection.execute(
+    "SELECT * FROM recettes WHERE titre = ?",
+    [req.params.nom]
+  );
 
-scrapeRecipes('https://www.allrecipes.com/recipes/');
+  res.json(recipe[0]);
+});
+
+// get recipe by ingredients
+app.get("/recettes/ingredients/:ingredients", async (req, res) => {
+  const [recipe] = await dbConnection.execute(
+    `SELECT recettes.* FROM recettes
+    JOIN ingredients_recettes ON recettes.id = ingredients_recettes.recette_id
+    JOIN ingredients ON ingredients_recettes.ingredient_id = ingredients.id
+    WHERE ingredients.nom = ?`,
+    [req.params.ingredients]
+  );
+
+  res.json(recipe[0]);
+});
+
+app.listen(3000, () => {
+  console.log("Server listening on port 3000");
+});
