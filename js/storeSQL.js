@@ -3,6 +3,7 @@ import fs from "fs";
 
 (async () => {
   const recipesJsonFilePath = "./json/recettes.json";
+
   try {
     const dbConnection = await mysql.createConnection({
       host: "localhost",
@@ -20,6 +21,7 @@ import fs from "fs";
         id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         titre VARCHAR(255) NOT NULL,
         image VARCHAR(255),
+        ingredients JSON,
         instructions JSON
       )`);
 
@@ -52,8 +54,8 @@ import fs from "fs";
       if (existingRecipe.length === 0) {
         // Si la recette n'existe pas, on l'insère dans la base de données
         const [result] = await dbConnection.execute(
-          "INSERT INTO recettes (titre, image, instructions) VALUES (?, ?, ?)",
-          [recipe.titre, recipe.image, JSON.stringify(recipe.instructions)]
+          "INSERT INTO recettes (titre, image, ingredients, instructions) VALUES (?, ?, ?, ?)",
+          [recipe.titre, recipe.image, JSON.stringify(recipe.ingredients), JSON.stringify(recipe.instructions)]
         );
         recetteId = result.insertId;
       } else {
