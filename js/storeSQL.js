@@ -3,14 +3,15 @@ import fs from "fs";
 
 (async () => {
   const recipesJsonFilePath = "./json/recettes.json";
+  
+  const dbConnection = await mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "restaurant",
+  });
 
   try {
-    const dbConnection = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "",
-      database: "restaurant",
-    });
     // drop all tables if they exist
     await dbConnection.execute("DROP TABLE IF EXISTS ingredients_recettes");
     await dbConnection.execute("DROP TABLE IF EXISTS ingredients");
@@ -44,14 +45,14 @@ import fs from "fs";
     const recipes = JSON.parse(data);
 
     for (const recipe of recipes) {
-      // Vériier si la recette existe déjà dans la base de données
+      // Vérifier si la recette existe déjà dans la base de données
       const [existingRecipe] = await dbConnection.execute(
         "SELECT id FROM recettes WHERE titre = ?",
         [recipe.titre]
       );
 
       let recetteId;
-      if (existingRecipe.length === 0) {
+      if (!existingRecipe.length) {
         // Si la recette n'existe pas, on l'insère dans la base de données
         const [result] = await dbConnection.execute(
           "INSERT INTO recettes (titre, image, ingredients, instructions) VALUES (?, ?, ?, ?)",
@@ -71,7 +72,7 @@ import fs from "fs";
         );
 
         let ingredientId;
-        if (existingIngredient.length === 0) {
+        if (!existingIngredient.length) {
           // Si l'ingrédient n'existe pas, on l'insère dans la base de données
           const [ingredientResult] = await dbConnection.execute(
             "INSERT INTO ingredients (nom) VALUES (?)",
@@ -93,7 +94,7 @@ import fs from "fs";
 
     await dbConnection.end();
 
-  } catch (err) {
-    console.error(err);
+  } finally {
+    await dbConnection.end();
   }
 })();
