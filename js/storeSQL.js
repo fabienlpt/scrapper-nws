@@ -1,15 +1,15 @@
 import mysql from "mysql2/promise";
 import fs from "fs";
+import {
+  recette_config,
+  ingredients_config,
+  ingredients_recettes_config,
+  sqlConfig,
+  recipesJsonFilePath
+} from "./config.js";
 
-(async () => {
-  const recipesJsonFilePath = "./json/recettes.json";
-  
-  const dbConnection = await mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "restaurant",
-  });
+(async () => {  
+  const dbConnection = await mysql.createConnection(sqlConfig);
 
   try {
     // drop all tables if they exist
@@ -17,29 +17,9 @@ import fs from "fs";
     await dbConnection.execute("DROP TABLE IF EXISTS ingredients");
     await dbConnection.execute("DROP TABLE IF EXISTS recettes");
 
-    // create recettes table to store recipes
-    await dbConnection.execute(`CREATE TABLE IF NOT EXISTS recettes (
-        id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        titre VARCHAR(255) NOT NULL,
-        image VARCHAR(255),
-        ingredients JSON,
-        instructions JSON
-      )`);
-
-    // create ingredients table to store ingredients
-    await dbConnection.execute(`CREATE TABLE IF NOT EXISTS ingredients (
-        id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        nom VARCHAR(255) NOT NULL
-      )`);
-
-    // create ingredients_recettes table to store the relationship between recipes and ingredients
-    await dbConnection.execute(`CREATE TABLE IF NOT EXISTS ingredients_recettes (
-        id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        recette_id INT(11) NOT NULL,
-        ingredient_id INT(11) NOT NULL,
-        FOREIGN KEY (recette_id) REFERENCES recettes(id),
-        FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
-      )`);
+    await dbConnection.execute(recette_config);
+    await dbConnection.execute(ingredients_config);
+    await dbConnection.execute(ingredients_recettes_config);
 
     const data = await fs.promises.readFile(recipesJsonFilePath, "utf8");
     const recipes = JSON.parse(data);

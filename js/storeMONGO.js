@@ -1,9 +1,12 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 import fs from "fs";
+import {
+  mongoUrl,
+  recipesJsonFilePath,
+} from "./config.js";
 
-const uri = "mongodb+srv://fabienlpt:ZelUXj195anP8zYh@restaurant.g3uerf0.mongodb.net/?retryWrites=true&w=majority";
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, {
+const client = new MongoClient(mongoUrl, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
@@ -12,8 +15,6 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
-  const recipesJsonFilePath = "./json/recettes.json";
-
   try {
     await client.connect();
 
