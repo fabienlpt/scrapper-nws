@@ -8,6 +8,10 @@ import fs from "fs";
     password: "",
     database: "restaurant",
   });
+	// drop all tables if they exist
+	await dbConnection.execute("DROP TABLE IF EXISTS ingredients_recettes");
+	await dbConnection.execute("DROP TABLE IF EXISTS ingredients");
+	await dbConnection.execute("DROP TABLE IF EXISTS recettes");
 
   // create recettes table to store recipes
   await dbConnection.execute(`CREATE TABLE IF NOT EXISTS recettes (
