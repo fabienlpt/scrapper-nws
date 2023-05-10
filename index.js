@@ -1,8 +1,6 @@
 import mysql from "mysql2/promise";
 import express from "express";
 
-// create get / get by id / get by name / get by ingredients routes
-
 const app = express();
 
 // create a connection to the database
