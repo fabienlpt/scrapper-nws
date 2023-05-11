@@ -18,11 +18,20 @@ async function run() {
     await client.connect();
 
     const database = client.db("restaurant");
-    database.collection('recettes').drop()
-    await database.createCollection("recettes")
-    database.collection('ingredients').drop()
+    
+    const collections = await database.listCollections().toArray();
+    if (collections.some((collection) => collection.name === 'recettes')) {
+      await database.collection('recettes').drop();
+    }
+    if (collections.some((collection) => collection.name === 'ingredients')) {
+      await database.collection('ingredients').drop();
+    }
+    if (collections.some((collection) => collection.name === 'ingredients_recettes')) {
+      await database.collection('ingredients_recettes').drop();
+    }
+
+    await database.createCollection("recettes");
     await database.createCollection('ingredients');
-    database.collection('ingredients_recettes').drop()
     await database.createCollection('ingredients_recettes');
 
     const data = await fs.promises.readFile(recipesJsonFilePath, "utf8");
